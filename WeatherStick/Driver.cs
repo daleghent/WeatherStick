@@ -195,8 +195,10 @@ namespace ASCOM.WeatherStick {
             serialConnection.Dispose();
             serialConnection = null;
 
-            queryThreadCts.Dispose();
-            queryThreadTask.Dispose();
+            while (queryThreadTask != null && queryThreadTask.Status == TaskStatus.RanToCompletion) {
+                queryThreadTask.Dispose();
+                queryThreadCts.Dispose();
+            }
         }
 
         public bool Connected {
@@ -214,6 +216,8 @@ namespace ASCOM.WeatherStick {
 
                     queryThreadCts = new CancellationTokenSource();
                     ct = queryThreadCts.Token;
+                    ct.ThrowIfCancellationRequested();
+
                     queryThreadTask = QueryDevice();
                 } else {
                     LogMessage("Connected Set", $"Disconnecting from port {comPort}");
