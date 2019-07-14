@@ -535,7 +535,7 @@ namespace ASCOM.WeatherStick {
                 };
 
                 serialConnection.Connected = true;
-                utilities.WaitForMilliseconds(2000);
+                serialConnection.ReceiveTerminated("##");
                 serialConnection.ClearBuffers();
 
                 connectedState = true;
