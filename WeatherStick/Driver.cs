@@ -65,7 +65,7 @@ namespace ASCOM.WeatherStick {
         /// <summary>
         /// Driver description that displays in the ASCOM Chooser.
         /// </summary>
-        private static string driverDescription = "Weather Stick";
+        internal static string driverDescription = "Weather Stick";
 
         internal static string comPortProfileName = "COM Port"; // Constants used for Profile persistence
         internal static string comPortDefault = "COM1";
@@ -195,10 +195,11 @@ namespace ASCOM.WeatherStick {
             serialConnection.Dispose();
             serialConnection = null;
 
-            while (queryThreadTask != null && queryThreadTask.Status == TaskStatus.RanToCompletion) {
+            while (queryThreadTask != null && queryThreadTask.Status == TaskStatus.Canceled) {
                 queryThreadTask.Dispose();
                 queryThreadCts.Dispose();
             }
+
         }
 
         public bool Connected {
@@ -219,14 +220,22 @@ namespace ASCOM.WeatherStick {
                     ct.ThrowIfCancellationRequested();
 
                     queryThreadTask = QueryDevice();
-                } else {
-                    LogMessage("Connected Set", $"Disconnecting from port {comPort}");
-                    connectedState = false;
 
+                    LogMessage("Connected Set", "Fully connected");
+                } else {
+                    LogMessage("Connected Set", $"Cancelling queryThreadTask");
                     queryThreadCts.Cancel();
 
+                    LogMessage("Connected Set", "Waiting for queryThreadTask to exit...");
+                    queryThreadTask.Wait();
+
+                    LogMessage("Connected Set", $"Disconnecting from port {comPort}");
                     DisconnectWeatherStick();
+
+                    LogMessage("Connected Set", "Fully disconnected");
+
                     Dispose();
+
                 }
             }
         }
